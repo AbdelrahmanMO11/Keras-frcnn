@@ -1,4 +1,4 @@
-from keras.engine.topology import Layer
+from keras.layers import Layer
 import keras.backend as K
 
 if K.backend() == 'tensorflow':
@@ -6,17 +6,28 @@ if K.backend() == 'tensorflow':
 
 class RoiPoolingConv(Layer):
     '''ROI pooling layer for 2D inputs.
-    See Spatial Pyramid Pooling in Deep ... `(1, rows, cols, channels)` if dim_ordering='tf'.
+    See Spatial Pyramid Pooling in Deep Convolutional Networks for Visual Recognition,
+    K. He, X. Zhang, S. Ren, J. Sun
+    # Arguments
+        pool_size: int
+            Size of pooling region to use. pool_size = 7 will result in a 7x7 region.
+        num_rois: number of regions of interest to be used
+    # Input shape
+        list of two 4D tensors [X_img,X_roi] with shape:
+        X_img:
+        `(1, channels, rows, cols)` if dim_ordering='th'
+        or 4D tensor with shape:
+        `(1, rows, cols, channels)` if dim_ordering='tf'.
         X_roi:
         `(1,num_rois,4)` list of rois, with ordering (x,y,w,h)
     # Output shape
         3D tensor with shape:
-        `(1, num_rois, ... channels, pool_size, pool_size)`
+        `(1, num_rois, channels, pool_size, pool_size)`
     '''
     def __init__(self, pool_size, num_rois, **kwargs):
 
-        self.dim_ordering = K.common.image_dim_ordering()
-        assert self.dim_ordering in {'tf', 'th'}, 'dim_ordering must be in {tf, ... th}'
+        self.dim_ordering = K.image_data_format()
+        assert self.dim_ordering in {'tf', 'th'}, 'dim_ordering must be in {tf, th}'
 
         self.pool_size = pool_size
         self.num_rois = num_rois
@@ -58,7 +69,7 @@ class RoiPoolingConv(Layer):
 
             num_pool_regions = self.pool_size
 
-            #NOTE: the RoiPooling implementation differs between ... theano and tensorflow due to the lack of a resize op
+            #NOTE: the RoiPooling implementation differs between theano and tensorflow due to the lack of a resize op
             # in theano. The theano implementation is much less efficient and leads to long compile times
 
             if self.dim_ordering == 'th':
